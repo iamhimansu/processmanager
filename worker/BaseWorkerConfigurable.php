@@ -2,8 +2,6 @@
 
 namespace app\processmanager\worker;
 
-use Closure;
-
 interface BaseWorkerConfigurable
 {
     /**
@@ -14,11 +12,9 @@ interface BaseWorkerConfigurable
 
     /**
      * The logic that will be used for processing task
-     * must be an instance of closure
-     * @param Closure $closure
      * @return mixed
      */
-    public function run(Closure $closure);
+    public function run();
 
     /** Opens a child process of the
      * Process Manger
@@ -37,4 +33,13 @@ interface BaseWorkerConfigurable
      */
     public function completed();
 
+    /** Registers worker class to the env so that the script can use it
+     * @return mixed
+     */
+    public function registerWorkerToEnv();
+
+    /** Un-registers worker class to the env after execution
+     * @return mixed
+     */
+    public function unregisterWorkerFromEnv();
 }

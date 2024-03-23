@@ -25,7 +25,7 @@ class BaseShellAbstract implements BaseShellConfigurable
      */
     private $_isShellClosed;
 
-    private function __construct($command, $params, $processManager)
+    private function __construct($command, &$params, $processManager)
     {
         $this->_processManager = $processManager;
         $this->_command = $command;
@@ -33,8 +33,9 @@ class BaseShellAbstract implements BaseShellConfigurable
         $this->_isShellClosed = false;
     }
 
-    public static function create($command, $params, $processManager)
+    public static function create($command, &$params, $processManager)
     {
+        $command = escapeshellarg($command);
         return new static($command, $params, $processManager);
     }
 
@@ -43,7 +44,7 @@ class BaseShellAbstract implements BaseShellConfigurable
      */
     public function exec()
     {
-        return $this->_processPointer = proc_open($this->_command, [], $pipes, null);
+        return $this->_processPointer = proc_open($this->_command, [], $pipes, null, $this->_params);
     }
 
     /**

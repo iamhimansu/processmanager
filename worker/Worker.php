@@ -2,12 +2,11 @@
 
 namespace app\processmanager\worker;
 
-use Closure;
-
 class Worker extends BaseWorkerAbstract
 {
-    public function run(Closure $closure)
+    public function run()
     {
-
+        echo "done\n";
+        exit(0);
     }
 }

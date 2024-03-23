@@ -8,20 +8,17 @@ use Exception as PHPBaseException;
 class ProcessManagerAbstract implements BaseProcessManagerConfigurable
 {
     private const PROCESS_WORKER_PREFIX = 'PMW';
-
+    /**
+     * Maintains the count of the workers
+     * @var int $workerCount
+     */
+    private static $workerCount = 0;
     /**
      * Data will be passed to the worker using file
      * Good to use when data set is large
      * @var bool $useFileData
      */
     public $useFileData = true;
-
-    /**
-     * Maintains the count of the workers
-     * @var int $workerCount
-     */
-    private $workerCount = 0;
-
     /**
      * Path of the binary file of php
      * @var string $_phpBinary
@@ -70,6 +67,11 @@ class ProcessManagerAbstract implements BaseProcessManagerConfigurable
      */
     private $_workerPath;
 
+    /** Special hash that is constant for a class
+     * @var string $_classHash
+     */
+    private $_classHash;
+
     /**
      * The constructor sets the default configurations
      * sets the worker path
@@ -90,6 +92,7 @@ class ProcessManagerAbstract implements BaseProcessManagerConfigurable
         }
         $this->setPhpBinPath($phpBinary);
         $this->setWorkerPath(realpath(__DIR__ . "/bin/main.php"));
+        $this->_classHash = $this->generateClassHash();
     }
 
     /**
@@ -105,17 +108,11 @@ class ProcessManagerAbstract implements BaseProcessManagerConfigurable
     }
 
     /**
-     * @param false|string $workerPath
-     * @return self
-     * @throws PHPBaseException
+     * @return string
      */
-    public function setWorkerPath($workerPath)
+    private function generateClassHash()
     {
-        if (file_exists($workerPath)) {
-            $this->_workerPath = $workerPath;
-            return $this;
-        }
-        throw new PHPBaseException("Worker file at: '$workerPath' does not exists.");
+        return spl_object_hash($this);
     }
 
     /**
@@ -130,6 +127,7 @@ class ProcessManagerAbstract implements BaseProcessManagerConfigurable
 
     /**
      * @return bool
+     * @throws PHPBaseException
      */
     public function canAssignWorker()
     {
@@ -178,8 +176,8 @@ class ProcessManagerAbstract implements BaseProcessManagerConfigurable
      */
     private function generateWorkerId()
     {
-        ++$this->workerCount;
-        return "{$this->workerCount}_" . self::PROCESS_WORKER_PREFIX . "_SPL_OBJ_HASH_" . spl_object_hash($this) . "_" . hash('sha256', serialize($this)) . $this->workerCount;
+        $count = ++$this::$workerCount;
+        return spl_object_hash($this) . "." . hash('sha256', serialize($this)) . $count . "_{$count}_" . self::PROCESS_WORKER_PREFIX;
     }
 
     /**
@@ -298,5 +296,30 @@ class ProcessManagerAbstract implements BaseProcessManagerConfigurable
     public function getWorkerPath()
     {
         return $this->_workerPath;
+    }
+
+    /**
+     * @param false|string $workerPath
+     * @return self
+     * @throws PHPBaseException
+     */
+    public function setWorkerPath($workerPath)
+    {
+        if (file_exists($workerPath)) {
+            $this->_workerPath = $workerPath;
+            return $this;
+        }
+        throw new PHPBaseException("Worker file at: '$workerPath' does not exists.");
+    }
+
+    /** The hash of the class
+     * @return string
+     */
+    public function getClassHash()
+    {
+        if (empty($this->_classHash)) {
+            $this->_classHash = $this->generateClassHash();
+        }
+        return $this->_classHash;
     }
 }

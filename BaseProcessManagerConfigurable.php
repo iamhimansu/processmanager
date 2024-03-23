@@ -95,4 +95,8 @@ interface BaseProcessManagerConfigurable
      */
     public function getCompletedCount();
 
+    /** The hash of the class
+     * @return string
+     */
+    public function getClassHash();
 }
