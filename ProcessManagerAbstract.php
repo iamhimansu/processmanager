@@ -151,10 +151,10 @@ class ProcessManagerAbstract implements BaseProcessManagerConfigurable
      */
     public function canAssignWorker()
     {
-        if ($this->getSysLoad() >= 1000) {
+        /*if ($this->getSysLoad() >= 1000) {
             usleep(20000);
             return true;
-        }
+        }*/
 
         if (!empty($this->_waiting) || !empty($this->_running)) {
 
