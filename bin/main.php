@@ -1,14 +1,23 @@
 <?php
 
-if (!php_sapi_name() == 'cli') {
+if (php_sapi_name() != 'cli') {
     exit(0);
 }
+
 array_shift($argv);
-[$workerId] = $argv;
+[$workerId, $classDefinitions] = $argv;
+
+/**
+ * Load class definitions
+ */
+foreach (unserialize(base64_decode($classDefinitions)) as $definition) {
+    require_once $definition;
+}
+
 try {
-    $worker = json_decode(getenv($workerId));
-    if ($worker instanceof stdClass) {
-        /** @var $worker \app\processmanager\worker\Worker */
+    $worker = unserialize(base64_decode(getenv($workerId)));
+
+    if ($worker instanceof \app\processmanager\worker\Worker) {
         $worker->unregisterWorkerFromEnv();
         return $worker->run();
     } else {
@@ -18,14 +27,3 @@ try {
     echo $e->getMessage();
 }
 exit(0);
-echo "<pre>";
-var_dump(getenv($workerId), $_SERVER);
-echo "</pre>";
-die;
-foreach ($_SERVER['argv'] as $param) {
-    $params[] = $param;
-}
-echo "<pre>";
-var_dump(php_sapi_name(), implode(' : ', $params));
-echo "</pre>";
-die;

@@ -59,6 +59,23 @@ class BaseWorkerAbstract implements BaseWorkerConfigurable
                 throw new WorkerException(static::class . "::$property does not exists.");
             }
         }
+        if (empty($this->processManager)) {
+            $this->processManager = new ProcessManager();
+        }
+        /**
+         * Add to class definitions
+         */
+        if (!isset($this->getProcessManager()->getClassDefinitions()[__FILE__])) {
+            $this->getProcessManager()->addClassDefinitions(__FILE__);
+        }
+    }
+
+    /**
+     * @return ProcessManager
+     */
+    public function getProcessManager()
+    {
+        return $this->processManager;
     }
 
     /**
@@ -80,19 +97,13 @@ class BaseWorkerAbstract implements BaseWorkerConfigurable
     {
         if (empty($this->_shell)) {
             $workerPath = $this->getProcessManager()->getWorkerPath();
-            $this->registerWorkerToEnv();
-            $this->_shell = Shell::create("{$this->getProcessManager()->getPhpBinary()} $workerPath {$this->id}", $params, $this->getProcessManager());
+            $classDefinitions = base64_encode(serialize($this->getProcessManager()->classDefinitions()));
+            $clone = clone $this;
+            $clone->registerWorkerToEnv();
+            $this->_shell = Shell::create("{$this->getProcessManager()->getPhpBinary()} $workerPath {$this->id} {$classDefinitions}", $params, $this->getProcessManager());
             return $this->getShell()->exec();
         }
         return $this->getShell()->getProcessStatus();
-    }
-
-    /**
-     * @return ProcessManager
-     */
-    public function getProcessManager()
-    {
-        return $this->processManager;
     }
 
     /** Registers worker class to the env so that the script can use it
@@ -161,7 +172,7 @@ class BaseWorkerAbstract implements BaseWorkerConfigurable
 
     public function __toString()
     {
-        return json_encode($this, JSON_PRETTY_PRINT);
+        return base64_encode(serialize($this));
     }
 
 }

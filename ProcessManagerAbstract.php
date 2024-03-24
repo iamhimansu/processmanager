@@ -72,6 +72,8 @@ class ProcessManagerAbstract implements BaseProcessManagerConfigurable
      */
     private $_classHash;
 
+    private $_classDefinitions;
+
     /**
      * The constructor sets the default configurations
      * sets the worker path
@@ -93,6 +95,7 @@ class ProcessManagerAbstract implements BaseProcessManagerConfigurable
         $this->setPhpBinPath($phpBinary);
         $this->setWorkerPath(realpath(__DIR__ . "/bin/main.php"));
         $this->_classHash = $this->generateClassHash();
+        $this->_classDefinitions = $this->classDefinitions();
     }
 
     /**
@@ -113,6 +116,23 @@ class ProcessManagerAbstract implements BaseProcessManagerConfigurable
     private function generateClassHash()
     {
         return spl_object_hash($this);
+    }
+
+    /** @return mixed
+     * @since the worker class is being serialized
+     * and then unserialized in the main.php
+     * we need definition of the classes
+     */
+    public function classDefinitions()
+    {
+        return [
+            __DIR__ . '/BaseProcessManagerConfigurable.php' => __DIR__ . '/BaseProcessManagerConfigurable.php',
+            __DIR__ . '/ProcessManagerAbstract.php' => __DIR__ . '/ProcessManagerAbstract.php',
+            __DIR__ . '/ProcessManager.php' => __DIR__ . '/ProcessManager.php',
+            __DIR__ . '/worker/BaseWorkerConfigurable.php' => __DIR__ . '/worker/BaseWorkerConfigurable.php',
+            __DIR__ . '/worker/BaseWorkerAbstract.php' => __DIR__ . '/worker/BaseWorkerAbstract.php',
+            __DIR__ . '/worker/Worker.php' => __DIR__ . '/worker/Worker.php',
+        ];
     }
 
     /**
@@ -321,5 +341,20 @@ class ProcessManagerAbstract implements BaseProcessManagerConfigurable
             $this->_classHash = $this->generateClassHash();
         }
         return $this->_classHash;
+    }
+
+    public function addClassDefinitions($path)
+    {
+        if (file_exists($path)) {
+            $this->_classDefinitions[$path] = $path;
+        }
+    }
+
+    /**
+     * @return mixed|string[]
+     */
+    public function getClassDefinitions()
+    {
+        return $this->_classDefinitions;
     }
 }
