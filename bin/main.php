@@ -1,5 +1,4 @@
 <?php
-
 if (php_sapi_name() != 'cli') {
     exit(0);
 }
@@ -16,7 +15,6 @@ foreach (unserialize(base64_decode($classDefinitions)) as $definition) {
 
 try {
     $worker = unserialize(base64_decode(getenv($workerId)));
-
     if ($worker instanceof \app\processmanager\worker\Worker) {
         $worker->unregisterWorkerFromEnv();
         return $worker->run();

@@ -100,10 +100,10 @@ interface BaseProcessManagerConfigurable
      */
     public function getClassHash();
 
-    /** @since the worker class is being serialized
+    /** @return mixed
+     * @since the worker class is being serialized
      * and then unserialized in the main.php
      * we need definition of the classes
-     * @return mixed
      */
     public function classDefinitions();
 }
