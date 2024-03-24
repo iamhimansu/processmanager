@@ -95,28 +95,70 @@ class BaseWorkerAbstract implements BaseWorkerConfigurable
      */
     public function openShell()
     {
+        $this->clearData();
         if (empty($this->_shell)) {
             $workerPath = $this->getProcessManager()->getWorkerPath();
             $classDefinitions = base64_encode(serialize($this->getProcessManager()->classDefinitions()));
             $clone = clone $this;
-            $clone->registerWorkerToEnv();
-            $this->_shell = Shell::create("{$this->getProcessManager()->getPhpBinary()} $workerPath {$this->id} {$classDefinitions}", $params, $this->getProcessManager());
-            return $this->getShell()->exec();
+            if ($clone->handleDataRegistration()) {
+                $params = [
+                    $workerPath,
+                    $this->id,
+                    $classDefinitions
+                ];
+                $this->_shell = Shell::create("{$this->getProcessManager()->getPhpBinary()} %s %s %s", $params, $this->getProcessManager());
+                return $this->getShell()->exec();
+            }
         }
         return $this->getShell()->getProcessStatus();
     }
 
+    public function clearData()
+    {
+        if (file_exists($file = __DIR__ . "/../transporter/data/$this->id.bin")) {
+            return unlink($file);
+        }
+        return true;
+    }
+
+    /** Creates a registry for data
+     * @return bool
+     */
+    private function handleDataRegistration()
+    {
+        if ($this->getProcessManager()->useFileData) {
+            if (!file_exists($dirname = dirname($file = __DIR__ . "/../transporter/data/$this->id.bin"))) {
+                mkdir($dirname, 777);
+            }
+            try {
+                $fp = fopen($file, 'w');
+                try {
+                    fwrite($fp, $this);
+                } catch (WorkerLogicException $e) {
+                }
+                return fclose($fp);
+            } catch (WorkerLogicException $e) {
+            }
+            return false;
+        } else {
+            return $this->registerWorkerToEnv();
+        }
+    }
+
     /** Registers worker class to the env so that the script can use it
+     * Values of variables with dots in their names are not output when using getenv(), but are still present and can be explicitly queried.
+     * @see https://www.php.net/manual/en/function.putenv.php
      * @return bool
      */
     public function registerWorkerToEnv()
     {
         if (!getenv($this->id)) {
-            /**
-             * Values of variables with dots in their names are not output when using getenv(), but are still present and can be explicitly queried.
-             * @see https://www.php.net/manual/en/function.putenv.php
-             */
-            return putenv("{$this->id}={$this}");
+            if ($this->getProcessManager()->useFileData) {
+                $keyVal = sprintf("%s=%s", $this->id, $this->id);
+            } else {
+                $keyVal = sprintf("%s=%s", $this->id, $this);
+            }
+            return putenv($keyVal);
         }
         return false;
     }
@@ -155,9 +197,9 @@ class BaseWorkerAbstract implements BaseWorkerConfigurable
      */
     public function closeShell()
     {
+        $this->clearData();
         return $this->getShell()->close();
     }
-
 
     /** Un-registers worker class to the env after execution
      * @return mixed
@@ -165,7 +207,7 @@ class BaseWorkerAbstract implements BaseWorkerConfigurable
     public function unregisterWorkerFromEnv()
     {
         if (getenv($this->id)) {
-            return putenv("$this->id");
+            return putenv(sprintf('%s', $this->id));
         }
         return false;
     }
@@ -174,5 +216,4 @@ class BaseWorkerAbstract implements BaseWorkerConfigurable
     {
         return base64_encode(serialize($this));
     }
-
 }

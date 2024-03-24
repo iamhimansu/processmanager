@@ -106,4 +106,9 @@ interface BaseProcessManagerConfigurable
      * we need definition of the classes
      */
     public function classDefinitions();
+
+    /** Gets the load on the cpu
+     * @return mixed
+     */
+    public function getSysLoad();
 }

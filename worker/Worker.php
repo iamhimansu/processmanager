@@ -2,7 +2,7 @@
 
 namespace app\processmanager\worker;
 
-class Worker extends BaseWorkerAbstract
+final class Worker extends BaseWorkerAbstract
 {
     public function run()
     {
@@ -10,9 +10,9 @@ class Worker extends BaseWorkerAbstract
             mkdir($dirname, 777);
         }
         $fp = fopen($file, 'w+');
-        fwrite($fp, serialize($this->data));
+        fwrite($fp, print_r($this->data, 1));
         fclose($fp);
+
         echo "done\n";
-        exit(0);
     }
 }

@@ -151,7 +151,13 @@ class ProcessManagerAbstract implements BaseProcessManagerConfigurable
      */
     public function canAssignWorker()
     {
+        if ($this->getSysLoad() >= 1000) {
+            usleep(20000);
+            return true;
+        }
+
         if (!empty($this->_waiting) || !empty($this->_running)) {
+
             foreach ($this->_running as $index => $worker) {
                 if ($worker->completed()) {
                     $worker->closeShell();
@@ -180,6 +186,22 @@ class ProcessManagerAbstract implements BaseProcessManagerConfigurable
         return false;
     }
 
+    /** Gets the load on the cpu
+     * @return mixed
+     */
+    public function getSysLoad()
+    {
+        if (DIRECTORY_SEPARATOR == "\\") {
+            $output = [];
+            exec("wmic cpu get LoadPercentage /All", $output);
+            // Extract the CPU load percentage
+            return $output[1] ?? 0;
+        } else {
+            return sys_getloadavg()[1] ?? 0;
+        }
+
+    }
+
     /**
      * @inheritDoc
      */
@@ -197,7 +219,8 @@ class ProcessManagerAbstract implements BaseProcessManagerConfigurable
     private function generateWorkerId()
     {
         $count = ++$this::$workerCount;
-        return spl_object_hash($this) . "." . hash('sha256', serialize($this)) . $count . "_{$count}_" . self::PROCESS_WORKER_PREFIX;
+//        return self::PROCESS_WORKER_PREFIX . '_' . $count . '_' . spl_object_hash($this) . "." . hash('sha256', serialize($this)) . "_$count";
+        return self::PROCESS_WORKER_PREFIX . '_' . $count . '_' . hash('sha256', serialize($this)) . "_$count";
     }
 
     /**
