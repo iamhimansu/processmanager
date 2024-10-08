@@ -1,4 +1,13 @@
 # Process manager
+
+
+Performs multi processing in PHP, useful for processing huge datasets.
+
+Datasets are divided into chunks / children's, and each chunk is passed and executed into it own isolated shell, thus achieving parallel processing.
+
+After the execution, each child informs its completion state to its parent, and the parent intelligently pushes new children's to the queue for processing next chunk.
+
+
 - It manages multiple processes in php
 - Example shown below
 ```php
